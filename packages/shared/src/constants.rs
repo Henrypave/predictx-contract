@@ -28,7 +28,7 @@ pub const MAX_QUESTION_LENGTH: u32 = 256;
 /// Maximum number of polls that can be attached to a single match.
 pub const MAX_POLLS_PER_MATCH: u32 = 50;
 
-/// Basis neints denominator. Used as: `amount * fee_bps / BPS_DENOMINATOR`.
+/// Basis noints denominator. Used as: `amount * fee_bps / BPS_DENOMINATOR`.
 pub const BPS_DENOMINATOR: u32 = 10_000;
 
 /// Timeout in seconds after which emergency withdrawal may be permitted. `604_800` = 7 days.
