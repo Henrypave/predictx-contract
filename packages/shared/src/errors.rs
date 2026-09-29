@@ -80,6 +80,6 @@ pub enum PredictXError {
     OutcomeNotAvailable = 37,
     /// The reward amount must not be negative.
     InvalidRewardAmount = 38,
-    /// Platform fee exceeds the maximum allowed.
+    /// The platform fee exceeds the documented maximum.
     PlatformFeeTooHigh = 39,
 }

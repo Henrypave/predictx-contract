@@ -6,13 +6,16 @@ pub(crate) mod token_utils;
 
 use predictx_shared::{
     Match, PlatformStats, Poll, PollCategory, PollStatus, PredictXError, Stake, StakeSide,
-    MAX_POLLS_PER_MATCH, MAX_PLATFORM_FEE_BPS,
+    MAX_POLLS_PER_MATCH,
 };
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, String, Symbol, Vec};
 
 mod voting_oracle {
     soroban_sdk::contractimport!(file = "wasm/voting_oracle.wasm");
 }
+
+/// Maximum allowed platform fee in basis points (10%).
+pub const MAX_PLATFORM_FEE_BPS: u32 = 1000;
 
 fn map_oracle_poll_status(status: voting_oracle::PollStatus) -> PollStatus {
     match status {
@@ -534,6 +537,50 @@ mod test {
     }
 
     #[test]
+    fn initialize_rejects_fee_above_maximum() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let contract_id = env.register(PredictionMarket, ());
+        let client = PredictionMarketClient::new(&env, &contract_id);
+        let admin = Address::generate(&env);
+        let oracle = Address::generate(&env);
+        let token = Address::generate(&env);
+        let treasury = Address::generate(&env);
+        let err = client
+            .try_initialize(&admin, &oracle, &token, &treasury, &(MAX_PLATFORM_FEE_BPS + 1))
+            .expect_err("fee above maximum should be rejected");
+        assert_eq!(err, Ok(PredictXError::InvalidPlatformFee));
+    }
+
+    #[test]
+    fn initialize_accepts_fee_at_maximum() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let contract_id = env.register(PredictionMarket, ());
+        let client = PredictionMarketClient::new(&env, &contract_id);
+        let admin = Address::generate(&env);
+        let oracle = Address::generate(&env);
+        let token = Address::generate(&env);
+        let treasury = Address::generate(&env);
+        client.initialize(&admin, &oracle, &token, &treasury, &MAX_PLATFORM_FEE_BPS);
+        assert_eq!(client.get_platform_fee_bps(), MAX_PLATFORM_FEE_BPS);
+    }
+
+    #[test]
+    fn initialize_accepts_default_fee() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let contract_id = env.register(PredictionMarket, ());
+        let client = PredictionMarketClient::new(&env, &contract_id);
+        let admin = Address::generate(&env);
+        let oracle = Address::generate(&env);
+        let token = Address::generate(&env);
+        let treasury = Address::generate(&env);
+        client.initialize(&admin, &oracle, &token, &treasury, &TEST_FEE_BPS);
+        assert_eq!(client.get_platform_fee_bps(), TEST_FEE_BPS);
+    }
+
+    #[test]
     fn initialize_is_one_time_only() {
         let env = Env::default();
         env.mock_all_auths();
@@ -819,50 +866,6 @@ mod test {
         client.resolve_poll(&oracle, &3_u64, &false);
         let err = client.try_resolve_poll(&oracle, &3_u64, &true).expect_err("already");
         assert_eq!(err, Ok(PredictXError::PollAlreadyResolved));
-    }
-
-    #[test]
-    fn initialize_rejects_fee_above_maximum() {
-        let env = Env::default();
-        env.mock_all_auths();
-        let contract_id = env.register(PredictionMarket, ());
-        let client = PredictionMarketClient::new(&env, &contract_id);
-        let admin = Address::generate(&env);
-        let oracle = Address::generate(&env);
-        let token = Address::generate(&env);
-        let treasury = Address::generate(&env);
-        let err = client
-            .try_initialize(&admin, &oracle, &token, &treasury, &(MAX_PLATFORM_FEE_BPS + 1))
-            .expect_err("fee above max should fail");
-        assert_eq!(err, Ok(PredictXError::InvalidPlatformFee));
-    }
-
-    #[test]
-    fn initialize_accepts_fee_at_maximum() {
-        let env = Env::default();
-        env.mock_all_auths();
-        let contract_id = env.register(PredictionMarket, ());
-        let client = PredictionMarketClient::new(&env, &contract_id);
-        let admin = Address::generate(&env);
-        let oracle = Address::generate(&env);
-        let token = Address::generate(&env);
-        let treasury = Address::generate(&env);
-        client.initialize(&admin, &oracle, &token, &treasury, &MAX_PLATFORM_FEE_BPS);
-        assert_eq!(client.get_platform_fee_bps(), MAX_PLATFORM_FEE_BPS);
-    }
-
-    #[test]
-    fn initialize_accepts_default_fee() {
-        let env = Env::default();
-        env.mock_all_auths();
-        let contract_id = env.register(PredictionMarket, ());
-        let client = PredictionMarketClient::new(&env, &contract_id);
-        let admin = Address::generate(&env);
-        let oracle = Address::generate(&env);
-        let token = Address::generate(&env);
-        let treasury = Address::generate(&env);
-        client.initialize(&admin, &oracle, &token, &treasury, &TEST_FEE_BPS);
-        assert_eq!(client.get_platform_fee_bps(), TEST_FEE_BPS);
     }
 
 }

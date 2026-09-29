@@ -8,7 +8,7 @@ pub const MAX_PLATFORM_FEE_BPS: u32 = 1_000;
 pub const VOTER_REWARD_BPS: u32 = 100;
 
 /// Duration of the community voting window in seconds. `7_200` = 2 hours.
-pub const VOTING_WINDOW_SECS_SECS: u64 = 7_200;
+pub const VOTING_WINDOW_SECS_SENDING: u64 = 7_200;
 
 /// Duration of the dispute window in seconds. `86_400` = 24 hours.
 pub const DISPUTE_WINDOW_SECS: u64 = 86_400;
